@@ -105,20 +105,21 @@ function issueToMarkdown(issue: Issue): string {
   lines.push("## Description");
   lines.push("");
   lines.push(issue.description || "");
+  lines.push("");
   if (issue.evidence) {
-    lines.push("");
     lines.push(`Evidence: ${issue.evidence}`);
+    lines.push("");
   }
-  lines.push("");
 
-  lines.push("### Code example");
-  lines.push("");
-  if (issue.codeExample) {
+  if (issue.codeExample && issue.codeExample.trim().length > 0) {
+    debugger
+    lines.push("### Code example");
+    lines.push("");
     lines.push(`\`\`\`${issue.codeLanguage || ""}`);
     lines.push(issue.codeExample);
     lines.push("```");
+    lines.push("");
   }
-  lines.push("");
 
   lines.push("### Example issue scenario");
   lines.push("");
@@ -1271,7 +1272,7 @@ function App(): React.ReactElement {
                           </button>
 
                           {/* Impact details — editable */}
-                          <div className="issue-section">
+                          <div className={issue.impactDetails ? "issue-section" : "no-export"}>
                             <h4 className="section-label">Impact details:</h4>
                             <EditableBlock
                               value={issue.impactDetails}
@@ -1302,7 +1303,7 @@ function App(): React.ReactElement {
                           </div>
 
                           {/* Description — editable */}
-                          <div className="issue-section">
+                          <div className={issue.description ? "issue-section" : "no-export"}>
                             <h4 className="section-label">Description:</h4>
                             <EditableBlock
                               value={issue.description}
@@ -1331,7 +1332,7 @@ function App(): React.ReactElement {
                           </div>
 
                           {/* Code example — editable */}
-                          <div className="issue-section">
+                          <div className={issue.codeExample ? "issue-section" : "no-export"}>
                             <h4 className="section-label">Code example:</h4>
                             {issue.codeExample ? (
                               <EditableCode
@@ -1369,7 +1370,7 @@ function App(): React.ReactElement {
                           </div>
 
                           {/* Example issue scenario — editable */}
-                          <div className="issue-section">
+                          <div className={issue.exampleScenario ? "issue-section" : "no-export"}>
                             <h4 className="section-label">
                               Example issue scenario:
                             </h4>
@@ -1402,7 +1403,7 @@ function App(): React.ReactElement {
                           </div>
 
                           {/* Recommendation — editable */}
-                          <div className="issue-section">
+                          <div className={issue.recommendation ? "issue-section" : "no-export"}>
                             <h4 className="section-label">Recommendation:</h4>
                             <EditableBlock
                               value={issue.recommendation}
