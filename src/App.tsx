@@ -1,37 +1,21 @@
-import React, {
-  useState,
-  useCallback,
-  useRef,
-  useMemo,
-  useEffect,
-} from "react";
-import {
-  parseIssue,
-  getSeverityColor,
-  blockMarkdownToHtml,
-  groupByCategory,
-} from "./lib/parseIssue";
-import { generatePdf } from "./lib/generatePdf";
-import { generateDocx } from "./lib/generateDocx";
-import JSZip from "jszip";
 import { saveAs } from "file-saver";
-import TEMPLATE_MD from "./templates/template.md?raw";
-import {
-  EditableText,
-  EditableBlock,
-  EditableCode,
-  SeveritySelect,
-} from "./components/Editable";
+import JSZip from "jszip";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { EditableBlock, EditableCode, EditableText, SeveritySelect } from "./components/Editable";
+import { generateDocx } from "./lib/generateDocx";
+import { generatePdf } from "./lib/generatePdf";
+import { blockMarkdownToHtml, getSeverityColor, groupByCategory, parseIssue } from "./lib/parseIssue";
 import { translateText, translationAvailable } from "./lib/translate";
 import type {
+  EditableField,
+  FileEntry,
   Issue,
   IssueSnapshot,
-  FileEntry,
-  SavedState,
-  EditableField,
   PagedGroupedCategory,
   PagedIssue,
+  SavedState,
 } from "./lib/types";
+import TEMPLATE_MD from "./templates/template.md?raw";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -84,9 +68,7 @@ function issueToMarkdown(issue: Issue): string {
   // Extra rows in the severity table
   if (issue.extraRows && issue.extraRows.length > 0) {
     for (const row of issue.extraRows) {
-      lines.push(
-        `Additional Issue: ${row.title || ""} | ${row.severity || "Medium"}`,
-      );
+      lines.push(`Additional Issue: ${row.title || ""} | ${row.severity || "Medium"}`);
     }
   }
   lines.push(`Impact: ${issue.impact || "Medium"}`);
@@ -112,7 +94,6 @@ function issueToMarkdown(issue: Issue): string {
   }
 
   if (issue.codeExample && issue.codeExample.trim().length > 0) {
-    debugger
     lines.push("### Code example");
     lines.push("");
     lines.push(`\`\`\`${issue.codeLanguage || ""}`);
@@ -178,23 +159,15 @@ function App(): React.ReactElement {
   // -- core state (restored from localStorage when available) ---------------
   const [files, setFiles] = useState<FileEntry[]>(initialSaved?.files || []);
   const [issues, setIssues] = useState<Issue[]>(initialSaved?.issues || []);
-  const [originals, setOriginals] = useState<Record<number, IssueSnapshot>>(
-    initialSaved?.originals || {},
-  );
-  const [targetLanguage, setTargetLanguage] = useState<string>(
-    initialSaved?.targetLanguage || "Lithuanian",
-  );
-  const [lastSaved, setLastSaved] = useState<string | null>(
-    initialSaved?.lastSaved || null,
-  );
+  const [originals, setOriginals] = useState<Record<number, IssueSnapshot>>(initialSaved?.originals || {});
+  const [targetLanguage, setTargetLanguage] = useState<string>(initialSaved?.targetLanguage || "Lithuanian");
+  const [lastSaved, setLastSaved] = useState<string | null>(initialSaved?.lastSaved || null);
 
   // -- transient UI state (never persisted) ---------------------------------
   const [dragOver, setDragOver] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [translatingPages, setTranslatingPages] = useState<Set<number>>(
-    new Set(),
-  );
+  const [translatingPages, setTranslatingPages] = useState<Set<number>>(new Set());
   const [lastSavedDisplay, setLastSavedDisplay] = useState<string | null>(
     formatRelativeTime(initialSaved?.lastSaved ?? null),
   );
@@ -268,9 +241,7 @@ function App(): React.ReactElement {
   // File handling
   // -----------------------------------------------------------------------
   const processFiles = useCallback(async (fileList: FileList) => {
-    const mdFiles = Array.from(fileList).filter(
-      (f) => f.name.endsWith(".md") || f.type === "text/markdown",
-    );
+    const mdFiles = Array.from(fileList).filter((f) => /\.md$/i.test(f.name) || f.type === "text/markdown");
 
     if (mdFiles.length === 0) {
       alert("Please upload .md files only.");
@@ -348,9 +319,7 @@ function App(): React.ReactElement {
   const clearAll = useCallback(() => {
     if (
       issues.length > 0 &&
-      !window.confirm(
-        "Clear all files and edits? This will also remove saved data from browser storage.",
-      )
+      !window.confirm("Clear all files and edits? This will also remove saved data from browser storage.")
     ) {
       return;
     }
@@ -375,10 +344,7 @@ function App(): React.ReactElement {
         iss._id === issueId
           ? {
               ...iss,
-              extraRows: [
-                ...(iss.extraRows || []),
-                { title: "", severity: "Medium" },
-              ],
+              extraRows: [...(iss.extraRows || []), { title: "", severity: "Medium" }],
             }
           : iss,
       ),
@@ -396,19 +362,16 @@ function App(): React.ReactElement {
     );
   }, []);
 
-  const updateExtraRow = useCallback(
-    (issueId: number, rowIndex: number, field: string, value: string) => {
-      setIssues((prev) =>
-        prev.map((iss) => {
-          if (iss._id !== issueId) return iss;
-          const rows = [...(iss.extraRows || [])];
-          rows[rowIndex] = { ...rows[rowIndex], [field]: value };
-          return { ...iss, extraRows: rows };
-        }),
-      );
-    },
-    [],
-  );
+  const updateExtraRow = useCallback((issueId: number, rowIndex: number, field: string, value: string) => {
+    setIssues((prev) =>
+      prev.map((iss) => {
+        if (iss._id !== issueId) return iss;
+        const rows = [...(iss.extraRows || [])];
+        rows[rowIndex] = { ...rows[rowIndex], [field]: value };
+        return { ...iss, extraRows: rows };
+      }),
+    );
+  }, []);
 
   // -----------------------------------------------------------------------
   // Add new blank page
@@ -492,11 +455,7 @@ function App(): React.ReactElement {
     });
 
     // Apply the new IDs
-    setIssues((prev) =>
-      prev.map((iss) =>
-        idMap.has(iss._id) ? { ...iss, findingId: idMap.get(iss._id)! } : iss,
-      ),
-    );
+    setIssues((prev) => prev.map((iss) => (idMap.has(iss._id) ? { ...iss, findingId: idMap.get(iss._id)! } : iss)));
   }, [issues]);
 
   // -----------------------------------------------------------------------
@@ -511,10 +470,7 @@ function App(): React.ReactElement {
       const filename =
         (issue.findingId || `issue-${issueId}`).replace(/[/\\]/g, "-") +
         "-" +
-        (issue.title || "untitled")
-          .replace(/[/\\]/g, "-")
-          .replace(/\s+/g, "-")
-          .slice(0, 40) +
+        (issue.title || "untitled").replace(/[/\\]/g, "-").replace(/\s+/g, "-").slice(0, 40) +
         ".md";
 
       const blob = new Blob([md], { type: "text/markdown" });
@@ -539,10 +495,7 @@ function App(): React.ReactElement {
       const filename =
         (issue.findingId || `issue-${issue._id}`).replace(/[/\\]/g, "-") +
         "-" +
-        (issue.title || "untitled")
-          .replace(/[/\\]/g, "-")
-          .replace(/\s+/g, "-")
-          .slice(0, 40) +
+        (issue.title || "untitled").replace(/[/\\]/g, "-").replace(/\s+/g, "-").slice(0, 40) +
         ".md";
       zip.file(filename, md);
     }
@@ -553,16 +506,9 @@ function App(): React.ReactElement {
   // -----------------------------------------------------------------------
   // Issue editing
   // -----------------------------------------------------------------------
-  const updateIssue = useCallback(
-    (issueId: number, field: string, value: string) => {
-      setIssues((prev) =>
-        prev.map((iss) =>
-          iss._id === issueId ? { ...iss, [field]: value } : iss,
-        ),
-      );
-    },
-    [],
-  );
+  const updateIssue = useCallback((issueId: number, field: string, value: string) => {
+    setIssues((prev) => prev.map((iss) => (iss._id === issueId ? { ...iss, [field]: value } : iss)));
+  }, []);
 
   // -----------------------------------------------------------------------
   // Restore helpers
@@ -575,10 +521,7 @@ function App(): React.ReactElement {
       if (!issue) return false;
       // Deep compare for array fields like extraRows
       if (field === "extraRows") {
-        return (
-          JSON.stringify(issue[field] || []) !==
-          JSON.stringify(orig[field] || [])
-        );
+        return JSON.stringify(issue[field] || []) !== JSON.stringify(orig[field] || []);
       }
       return issue[field] !== orig[field];
     },
@@ -589,11 +532,7 @@ function App(): React.ReactElement {
     (issueId: number, field: EditableField) => {
       const orig = originals[issueId];
       if (!orig) return;
-      setIssues((prev) =>
-        prev.map((iss) =>
-          iss._id === issueId ? { ...iss, [field]: orig[field] } : iss,
-        ),
-      );
+      setIssues((prev) => prev.map((iss) => (iss._id === issueId ? { ...iss, [field]: orig[field] } : iss)));
     },
     [originals],
   );
@@ -602,11 +541,7 @@ function App(): React.ReactElement {
     (issueId: number) => {
       const orig = originals[issueId];
       if (!orig) return;
-      setIssues((prev) =>
-        prev.map((iss) =>
-          iss._id === issueId ? { ...orig, _id: issueId } : iss,
-        ),
-      );
+      setIssues((prev) => prev.map((iss) => (iss._id === issueId ? { ...orig, _id: issueId } : iss)));
     },
     [originals],
   );
@@ -676,8 +611,7 @@ function App(): React.ReactElement {
 
         for (const result of results) {
           if (result.status === "fulfilled") {
-            (updates as Record<string, unknown>)[result.value.field] =
-              result.value.translated;
+            (updates as Record<string, unknown>)[result.value.field] = result.value.translated;
           }
         }
 
@@ -687,10 +621,7 @@ function App(): React.ReactElement {
           const extraResults = await Promise.allSettled(
             translatedExtraRows.map(async (row) => {
               if (row.title && row.title.trim()) {
-                const translated = await translateText(
-                  row.title,
-                  targetLanguage,
-                );
+                const translated = await translateText(row.title, targetLanguage);
                 return { ...row, title: translated };
               }
               return row;
@@ -702,11 +633,7 @@ function App(): React.ReactElement {
           updates.extraRows = translatedExtraRows;
         }
 
-        setIssues((prev) =>
-          prev.map((iss) =>
-            iss._id === issueId ? { ...iss, ...updates } : iss,
-          ),
-        );
+        setIssues((prev) => prev.map((iss) => (iss._id === issueId ? { ...iss, ...updates } : iss)));
       } catch (err) {
         console.error("Page translation error:", err);
         alert("Translation failed. Check console for details.");
@@ -723,9 +650,7 @@ function App(): React.ReactElement {
 
   // helper exposed to Editable components; will be undefined if translation
   // should be turned off either because there's no API key or no language set.
-  const translateCallback =
-    translationAvailable && targetLanguage.trim() ? handleTranslate : undefined;
-
+  const translateCallback = translationAvailable && targetLanguage.trim() ? handleTranslate : undefined;
 
   // -----------------------------------------------------------------------
   // Export
@@ -809,9 +734,7 @@ function App(): React.ReactElement {
     <div className="app">
       <header className="app-header">
         <h1>🛡️ Audit Report Generator</h1>
-        <p className="subtitle">
-          Upload audit issue markdown files and generate PDF or DOCX reports
-        </p>
+        <p className="subtitle">Upload audit issue markdown files and generate PDF or DOCX reports</p>
       </header>
 
       <main className="app-main">
@@ -842,23 +765,15 @@ function App(): React.ReactElement {
           </div>
 
           {files.length > 0 && (
-            <div
-              className={`file-list ${filesCollapsed ? "file-list--collapsed" : ""}`}
-            >
+            <div className={`file-list ${filesCollapsed ? "file-list--collapsed" : ""}`}>
               <div
                 className="file-list-header file-list-header--clickable"
                 onClick={() => setFilesCollapsed((prev) => !prev)}
-                title={
-                  filesCollapsed ? "Expand file list" : "Collapse file list"
-                }
+                title={filesCollapsed ? "Expand file list" : "Collapse file list"}
               >
                 <h3>
-                  <span
-                    className={`collapse-chevron ${filesCollapsed ? "collapsed" : ""}`}
-                  >
-                    ▾
-                  </span>{" "}
-                  📄 Uploaded Files ({files.length})
+                  <span className={`collapse-chevron ${filesCollapsed ? "collapsed" : ""}`}>▾</span> 📄 Uploaded Files (
+                  {files.length})
                 </h3>
                 <button
                   className="btn btn-sm btn-danger"
@@ -880,9 +795,7 @@ function App(): React.ReactElement {
                           e.stopPropagation();
                           const issue = issues[index];
                           if (issue) {
-                            const el = document.getElementById(
-                              `issue-${issue._id}`,
-                            );
+                            const el = document.getElementById(`issue-${issue._id}`);
                             if (el)
                               el.scrollIntoView({
                                 behavior: "smooth",
@@ -894,11 +807,7 @@ function App(): React.ReactElement {
                       >
                         {file.name}
                       </span>
-                      <button
-                        className="btn-remove"
-                        onClick={() => removeFile(index)}
-                        title="Remove file"
-                      >
+                      <button className="btn-remove" onClick={() => removeFile(index)} title="Remove file">
                         ✕
                       </button>
                     </li>
@@ -910,18 +819,10 @@ function App(): React.ReactElement {
 
           {issues.length > 0 && (
             <div className="export-buttons">
-              <button
-                className="btn btn-primary"
-                onClick={handleExportPdf}
-                disabled={generating}
-              >
+              <button className="btn btn-primary" onClick={handleExportPdf} disabled={generating}>
                 {generating ? "⏳ Generating..." : "📄 Export as PDF"}
               </button>
-              <button
-                className="btn btn-secondary"
-                onClick={handleExportDocx}
-                disabled={generating}
-              >
+              <button className="btn btn-secondary" onClick={handleExportDocx} disabled={generating}>
                 {generating ? "⏳ Generating..." : "📝 Export as DOCX"}
               </button>
               <button
@@ -952,21 +853,15 @@ function App(): React.ReactElement {
               <div className="template-header">
                 <h3>📋 Expected Markdown Template</h3>
                 <p className="template-description">
-                  Each <code>.md</code> file should follow this structure. Copy
-                  the template below or download it as a starting point.
+                  Each <code>.md</code> file should follow this structure. Copy the template below or download it as a
+                  starting point.
                 </p>
               </div>
               <div className="template-actions">
-                <button
-                  className="btn btn-sm btn-outline"
-                  onClick={handleCopyTemplate}
-                >
+                <button className="btn btn-sm btn-outline" onClick={handleCopyTemplate}>
                   {copied ? "✅ Copied!" : "📋 Copy to clipboard"}
                 </button>
-                <button
-                  className="btn btn-sm btn-outline"
-                  onClick={handleDownloadTemplate}
-                >
+                <button className="btn btn-sm btn-outline" onClick={handleDownloadTemplate}>
                   ⬇️ Download template
                 </button>
               </div>
@@ -986,10 +881,7 @@ function App(): React.ReactElement {
               <h2>Preview</h2>
               <div className="preview-header-right">
                 {lastSavedDisplay && (
-                  <span
-                    className="last-saved-indicator"
-                    title={lastSaved || undefined}
-                  >
+                  <span className="last-saved-indicator" title={lastSaved || undefined}>
                     Saved {lastSavedDisplay}
                   </span>
                 )}
@@ -1045,10 +937,7 @@ function App(): React.ReactElement {
                     <div key={group.category} className="toc-category">
                       <h3 className="toc-category-title">
                         {group.category}
-                        <span className="toc-category-count">
-                          {" "}
-                          ({group.issues.length})
-                        </span>
+                        <span className="toc-category-count"> ({group.issues.length})</span>
                       </h3>
                       <ul className="toc-items">
                         {group.issues.map((issue) => {
@@ -1060,9 +949,7 @@ function App(): React.ReactElement {
                                 className="toc-link"
                                 onClick={(e) => {
                                   e.preventDefault();
-                                  const el = document.getElementById(
-                                    `issue-${issue._id}`,
-                                  );
+                                  const el = document.getElementById(`issue-${issue._id}`);
                                   if (el)
                                     el.scrollIntoView({
                                       behavior: "smooth",
@@ -1070,12 +957,8 @@ function App(): React.ReactElement {
                                     });
                                 }}
                               >
-                                <span className="toc-finding-id">
-                                  {issue.findingId || "—"}
-                                </span>
-                                <span className="toc-issue-title">
-                                  {issue.title || issue.component || "Untitled"}
-                                </span>
+                                <span className="toc-finding-id">{issue.findingId || "—"}</span>
+                                <span className="toc-issue-title">{issue.title || issue.component || "Untitled"}</span>
                                 <span
                                   className="toc-severity-badge"
                                   style={{
@@ -1125,9 +1008,7 @@ function App(): React.ReactElement {
                             <button
                               className="btn btn-sm btn-translate-page"
                               onClick={() => translateIssuePage(id)}
-                              disabled={
-                                isPageTranslating || !targetLanguage.trim() || !translationAvailable
-                              }
+                              disabled={isPageTranslating || !targetLanguage.trim() || !translationAvailable}
                               title={`Translate all fields to ${targetLanguage}`}
                             >
                               {isPageTranslating ? "⏳ Translating…" : "🌐"}
@@ -1149,10 +1030,7 @@ function App(): React.ReactElement {
                             className="issue-component"
                             placeholder="Component name"
                             onTranslate={translateCallback}
-                            originalValue={
-                              getOriginal(id, "component") ||
-                              getOriginal(id, "title")
-                            }
+                            originalValue={getOriginal(id, "component") || getOriginal(id, "title")}
                             onRestore={() => restoreField(id, "component")}
                           />
 
@@ -1162,9 +1040,7 @@ function App(): React.ReactElement {
                               ID:{" "}
                               <EditableText
                                 value={issue.findingId}
-                                onChange={(v) =>
-                                  updateIssue(id, "findingId", v)
-                                }
+                                onChange={(v) => updateIssue(id, "findingId", v)}
                                 tag="span"
                                 placeholder="ABC-XXXXXX"
                                 originalValue={getOriginal(id, "findingId")}
@@ -1186,9 +1062,7 @@ function App(): React.ReactElement {
                                 <td>
                                   <EditableText
                                     value={issue.title}
-                                    onChange={(v) =>
-                                      updateIssue(id, "title", v)
-                                    }
+                                    onChange={(v) => updateIssue(id, "title", v)}
                                     tag="span"
                                     placeholder="Issue title"
                                     onTranslate={translateCallback}
@@ -1199,17 +1073,13 @@ function App(): React.ReactElement {
                                 <td>
                                   <SeveritySelect
                                     value={issue.overallRisk}
-                                    onChange={(v) =>
-                                      updateIssue(id, "overallRisk", v)
-                                    }
+                                    onChange={(v) => updateIssue(id, "overallRisk", v)}
                                     getColor={getSeverityColor}
                                   />
                                   {isFieldModified(id, "overallRisk") && (
                                     <button
                                       className="restore-field-btn severity-restore"
-                                      onClick={() =>
-                                        restoreField(id, "overallRisk")
-                                      }
+                                      onClick={() => restoreField(id, "overallRisk")}
                                       title={`Restore original: ${getOriginal(id, "overallRisk")}`}
                                     >
                                       ↩
@@ -1219,17 +1089,13 @@ function App(): React.ReactElement {
                               </tr>
                               {/* Extra rows */}
                               {(issue.extraRows || []).map((row, ri) => {
-                                const rowSevColor = getSeverityColor(
-                                  row.severity,
-                                );
+                                const rowSevColor = getSeverityColor(row.severity);
                                 return (
                                   <tr key={`extra-${ri}`} className="extra-row">
                                     <td>
                                       <EditableText
                                         value={row.title}
-                                        onChange={(v) =>
-                                          updateExtraRow(id, ri, "title", v)
-                                        }
+                                        onChange={(v) => updateExtraRow(id, ri, "title", v)}
                                         tag="span"
                                         placeholder="Issue title"
                                         onTranslate={translateCallback}
@@ -1239,14 +1105,7 @@ function App(): React.ReactElement {
                                       <div className="extra-row-severity">
                                         <SeveritySelect
                                           value={row.severity}
-                                          onChange={(v) =>
-                                            updateExtraRow(
-                                              id,
-                                              ri,
-                                              "severity",
-                                              v,
-                                            )
-                                          }
+                                          onChange={(v) => updateExtraRow(id, ri, "severity", v)}
                                           getColor={getSeverityColor}
                                         />
                                         <button
@@ -1276,28 +1135,20 @@ function App(): React.ReactElement {
                             <h4 className="section-label">Impact details:</h4>
                             <EditableBlock
                               value={issue.impactDetails}
-                              onChange={(v) =>
-                                updateIssue(id, "impactDetails", v)
-                              }
+                              onChange={(v) => updateIssue(id, "impactDetails", v)}
                               placeholder="Click to add impact details…"
                               onTranslate={translateCallback}
                               originalValue={getOriginal(id, "impactDetails")}
-                              onRestore={() =>
-                                restoreField(id, "impactDetails")
-                              }
+                              onRestore={() => restoreField(id, "impactDetails")}
                             >
                               {issue.impactDetails ? (
                                 <div
                                   dangerouslySetInnerHTML={{
-                                    __html: blockMarkdownToHtml(
-                                      issue.impactDetails,
-                                    ),
+                                    __html: blockMarkdownToHtml(issue.impactDetails),
                                   }}
                                 />
                               ) : (
-                                <p className="editable-placeholder">
-                                  Click to add impact details…
-                                </p>
+                                <p className="editable-placeholder">Click to add impact details…</p>
                               )}
                             </EditableBlock>
                           </div>
@@ -1307,9 +1158,7 @@ function App(): React.ReactElement {
                             <h4 className="section-label">Description:</h4>
                             <EditableBlock
                               value={issue.description}
-                              onChange={(v) =>
-                                updateIssue(id, "description", v)
-                              }
+                              onChange={(v) => updateIssue(id, "description", v)}
                               placeholder="Click to add description…"
                               onTranslate={translateCallback}
                               originalValue={getOriginal(id, "description")}
@@ -1318,15 +1167,11 @@ function App(): React.ReactElement {
                               {issue.description ? (
                                 <div
                                   dangerouslySetInnerHTML={{
-                                    __html: blockMarkdownToHtml(
-                                      issue.description,
-                                    ),
+                                    __html: blockMarkdownToHtml(issue.description),
                                   }}
                                 />
                               ) : (
-                                <p className="editable-placeholder">
-                                  Click to add description…
-                                </p>
+                                <p className="editable-placeholder">Click to add description…</p>
                               )}
                             </EditableBlock>
                           </div>
@@ -1338,66 +1183,44 @@ function App(): React.ReactElement {
                               <EditableCode
                                 value={issue.codeExample}
                                 language={issue.codeLanguage}
-                                onChange={(v) =>
-                                  updateIssue(id, "codeExample", v)
-                                }
-                                onLanguageChange={(v) =>
-                                  updateIssue(id, "codeLanguage", v)
-                                }
+                                onChange={(v) => updateIssue(id, "codeExample", v)}
+                                onLanguageChange={(v) => updateIssue(id, "codeLanguage", v)}
                                 onTranslate={translateCallback}
                                 originalValue={getOriginal(id, "codeExample")}
-                                onRestore={() =>
-                                  restoreField(id, "codeExample")
-                                }
+                                onRestore={() => restoreField(id, "codeExample")}
                               />
                             ) : (
                               <EditableCode
                                 value=""
                                 language=""
-                                onChange={(v) =>
-                                  updateIssue(id, "codeExample", v)
-                                }
-                                onLanguageChange={(v) =>
-                                  updateIssue(id, "codeLanguage", v)
-                                }
+                                onChange={(v) => updateIssue(id, "codeExample", v)}
+                                onLanguageChange={(v) => updateIssue(id, "codeLanguage", v)}
                                 onTranslate={translateCallback}
                                 originalValue={getOriginal(id, "codeExample")}
-                                onRestore={() =>
-                                  restoreField(id, "codeExample")
-                                }
+                                onRestore={() => restoreField(id, "codeExample")}
                               />
                             )}
                           </div>
 
                           {/* Example issue scenario — editable */}
                           <div className={issue.exampleScenario ? "issue-section" : "no-export"}>
-                            <h4 className="section-label">
-                              Example issue scenario:
-                            </h4>
+                            <h4 className="section-label">Example issue scenario:</h4>
                             <EditableBlock
                               value={issue.exampleScenario}
-                              onChange={(v) =>
-                                updateIssue(id, "exampleScenario", v)
-                              }
+                              onChange={(v) => updateIssue(id, "exampleScenario", v)}
                               placeholder="Click to add example scenario…"
                               onTranslate={translateCallback}
                               originalValue={getOriginal(id, "exampleScenario")}
-                              onRestore={() =>
-                                restoreField(id, "exampleScenario")
-                              }
+                              onRestore={() => restoreField(id, "exampleScenario")}
                             >
                               {issue.exampleScenario ? (
                                 <div
                                   dangerouslySetInnerHTML={{
-                                    __html: blockMarkdownToHtml(
-                                      issue.exampleScenario,
-                                    ),
+                                    __html: blockMarkdownToHtml(issue.exampleScenario),
                                   }}
                                 />
                               ) : (
-                                <p className="editable-placeholder">
-                                  Click to add example scenario…
-                                </p>
+                                <p className="editable-placeholder">Click to add example scenario…</p>
                               )}
                             </EditableBlock>
                           </div>
@@ -1407,28 +1230,20 @@ function App(): React.ReactElement {
                             <h4 className="section-label">Recommendation:</h4>
                             <EditableBlock
                               value={issue.recommendation}
-                              onChange={(v) =>
-                                updateIssue(id, "recommendation", v)
-                              }
+                              onChange={(v) => updateIssue(id, "recommendation", v)}
                               placeholder="Click to add recommendations…"
                               onTranslate={translateCallback}
                               originalValue={getOriginal(id, "recommendation")}
-                              onRestore={() =>
-                                restoreField(id, "recommendation")
-                              }
+                              onRestore={() => restoreField(id, "recommendation")}
                             >
                               {issue.recommendation ? (
                                 <div
                                   dangerouslySetInnerHTML={{
-                                    __html: blockMarkdownToHtml(
-                                      issue.recommendation,
-                                    ),
+                                    __html: blockMarkdownToHtml(issue.recommendation),
                                   }}
                                 />
                               ) : (
-                                <p className="editable-placeholder">
-                                  Click to add recommendations…
-                                </p>
+                                <p className="editable-placeholder">Click to add recommendations…</p>
                               )}
                             </EditableBlock>
                           </div>

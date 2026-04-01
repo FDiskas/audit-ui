@@ -1,29 +1,29 @@
 import {
-  Document,
-  Packer,
-  Paragraph,
-  TextRun,
-  Table,
-  TableRow,
-  TableCell,
-  WidthType,
-  BorderStyle,
   AlignmentType,
-  HeadingLevel,
-  ShadingType,
-  PageBreak,
-  TableLayoutType,
-  convertInchesToTwip,
-  Footer,
-  PageNumber,
   Bookmark,
+  BorderStyle,
+  convertInchesToTwip,
+  Document,
+  Footer,
+  HeadingLevel,
+  type IBorderOptions,
   InternalHyperlink,
   type IRunOptions,
-  type IBorderOptions,
+  Packer,
+  PageBreak,
+  PageNumber,
+  Paragraph,
+  ShadingType,
+  Table,
+  TableCell,
+  TableLayoutType,
+  TableRow,
+  TextRun,
+  WidthType,
 } from "docx";
 import { saveAs } from "file-saver";
 import { groupByCategory } from "./parseIssue";
-import type { Issue, GroupedCategory } from "./types";
+import type { GroupedCategory, Issue } from "./types";
 
 // A4 page width in twips: 210mm = 11906 twips
 // Page margins: 0.75in each side = 1080 twips each
@@ -72,10 +72,7 @@ function getSeverityFontColor(severity: string): string {
  * Parse inline markdown into an array of TextRun objects.
  * Handles `code`, **bold**, *italic*, and plain text.
  */
-function parseInlineMarkdown(
-  text: string,
-  baseOptions: Partial<IRunOptions> = {},
-): TextRun[] {
+function parseInlineMarkdown(text: string, baseOptions: Partial<IRunOptions> = {}): TextRun[] {
   if (!text) return [new TextRun({ text: "", ...baseOptions })];
 
   const runs: TextRun[] = [];
@@ -141,10 +138,7 @@ interface BlockOptions {
 /**
  * Converts a block of markdown text into an array of Paragraph objects.
  */
-function blockToParagraphs(
-  text: string,
-  options: BlockOptions = {},
-): Paragraph[] {
+function blockToParagraphs(text: string, options: BlockOptions = {}): Paragraph[] {
   if (!text) return [];
 
   const lines = text.split("\n");

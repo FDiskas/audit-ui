@@ -1,19 +1,18 @@
+import hljs from "highlight.js/lib/common";
 import React, {
-  useState,
-  useRef,
-  useEffect,
-  useCallback,
-  useMemo,
-  type ReactNode,
-  type KeyboardEvent,
   type ChangeEvent,
   type FocusEvent,
-  type MouseEvent,
+  type KeyboardEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
-import hljs from "highlight.js/lib/common";
 import "highlight.js/styles/github.css";
-import type { SeverityColor } from "../lib/types";
 import { inlineMarkdownToHtml } from "../lib/parseIssue";
+import type { SeverityColor } from "../lib/types";
 
 const SEVERITY_OPTIONS = ["Critical", "High", "Medium", "Low", "Info"] as const;
 
@@ -21,9 +20,7 @@ const SEVERITY_OPTIONS = ["Critical", "High", "Medium", "Low", "Info"] as const;
  * Returns the platform-appropriate shortcut label.
  */
 function shortcutLabel(): string {
-  const isMac =
-    typeof navigator !== "undefined" &&
-    /Mac|iPhone|iPad|iPod/.test(navigator.platform);
+  const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.platform);
   return isMac ? "⌘⇧L" : "Ctrl+Shift+L";
 }
 
@@ -50,11 +47,7 @@ interface TranslateButtonProps {
  * Uses onMouseDown with preventDefault to avoid stealing focus from the
  * input/textarea, which would trigger onBlur → commit → close edit mode.
  */
-function TranslateButton({
-  onClick,
-  translating,
-  disabled,
-}: TranslateButtonProps): React.ReactElement | null {
+function TranslateButton({ onClick, translating, disabled }: TranslateButtonProps): React.ReactElement | null {
   if (disabled) return null;
   return (
     <button
@@ -90,16 +83,10 @@ interface RestoreButtonProps {
 /**
  * Small restore button shown when a field has been modified from its original.
  */
-function RestoreButton({
-  visible,
-  onClick,
-  originalValue,
-}: RestoreButtonProps): React.ReactElement | null {
+function RestoreButton({ visible, onClick, originalValue }: RestoreButtonProps): React.ReactElement | null {
   if (!visible) return null;
   const truncated =
-    typeof originalValue === "string" && originalValue.length > 60
-      ? originalValue.slice(0, 57) + "…"
-      : originalValue;
+    typeof originalValue === "string" && originalValue.length > 60 ? originalValue.slice(0, 57) + "…" : originalValue;
   return (
     <button
       type="button"
@@ -224,22 +211,15 @@ export function EditableText({
           type="text"
           className={`editable-input ${inputClassName} ${translating ? "translating" : ""}`}
           value={draft}
-          onChange={(e: ChangeEvent<HTMLInputElement>) =>
-            setDraft(e.target.value)
-          }
+          onChange={(e: ChangeEvent<HTMLInputElement>) => setDraft(e.target.value)}
           onBlur={commit}
           onKeyDown={handleKeyDown}
           disabled={translating}
         />
-        <TranslateButton
-          onClick={doTranslate}
-          translating={translating}
-          disabled={!onTranslate}
-        />
+        <TranslateButton onClick={doTranslate} translating={translating} disabled={!onTranslate} />
         {onTranslate && (
           <div className="editable-hint">
-            <kbd>{shortcutLabel()}</kbd> translate · <kbd>Enter</kbd> save ·{" "}
-            <kbd>Esc</kbd> cancel
+            <kbd>{shortcutLabel()}</kbd> translate · <kbd>Enter</kbd> save · <kbd>Esc</kbd> cancel
           </div>
         )}
       </div>
@@ -258,11 +238,7 @@ export function EditableText({
         <span className="editable-placeholder">{placeholder}</span>
       )}
       <span className="editable-pencil"> ✎</span>
-      <RestoreButton
-        visible={isModified && !!onRestore}
-        onClick={onRestore!}
-        originalValue={originalValue}
-      />
+      <RestoreButton visible={isModified && !!onRestore} onClick={onRestore!} originalValue={originalValue} />
     </Tag>
   );
 }
@@ -320,12 +296,7 @@ export function EditableBlock({
 
   // Re-focus after translation finishes and the textarea is re-enabled
   useEffect(() => {
-    if (
-      wantsFocusRef.current &&
-      !translating &&
-      editing &&
-      textareaRef.current
-    ) {
+    if (wantsFocusRef.current && !translating && editing && textareaRef.current) {
       wantsFocusRef.current = false;
       textareaRef.current.focus();
       autoResize(textareaRef.current);
@@ -376,11 +347,7 @@ export function EditableBlock({
     return (
       <div className={`editable-block-editing ${className}`}>
         <div className="editable-block-toolbar">
-          <TranslateButton
-            onClick={doTranslate}
-            translating={translating}
-            disabled={!onTranslate}
-          />
+          <TranslateButton onClick={doTranslate} translating={translating} disabled={!onTranslate} />
         </div>
         <textarea
           ref={textareaRef}
@@ -409,6 +376,8 @@ export function EditableBlock({
   }
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: This div is used as a clickable container for editing.
+    // biome-ignore lint/a11y/useKeyWithClickEvents: Keyboard accessibility is not needed since this is not a critical action and we want to avoid complexity of handling Enter/Space keys in addition to the pencil button.
     <div
       className={`editable-block-display ${className} ${isModified ? "editable-block-display--modified" : ""}`}
       onClick={() => setEditing(true)}
@@ -416,11 +385,7 @@ export function EditableBlock({
     >
       {children}
       <span className="editable-pencil"> ✎</span>
-      <RestoreButton
-        visible={isModified && !!onRestore}
-        onClick={onRestore!}
-        originalValue={originalValue}
-      />
+      <RestoreButton visible={isModified && !!onRestore} onClick={onRestore!} originalValue={originalValue} />
     </div>
   );
 }
@@ -479,12 +444,7 @@ export function EditableCode({
 
   // Re-focus after translation finishes and the textarea is re-enabled
   useEffect(() => {
-    if (
-      wantsFocusRef.current &&
-      !translating &&
-      editing &&
-      textareaRef.current
-    ) {
+    if (wantsFocusRef.current && !translating && editing && textareaRef.current) {
       wantsFocusRef.current = false;
       textareaRef.current.focus();
       autoResize(textareaRef.current);
@@ -504,10 +464,7 @@ export function EditableCode({
       }
       return hljs.highlightAuto(value).value;
     } catch {
-      return value
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
+      return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
   }, [value, language]);
 
@@ -520,26 +477,14 @@ export function EditableCode({
     if (onLanguageChange && langDraft !== language) {
       onLanguageChange(langDraft);
     }
-  }, [
-    draft,
-    value,
-    onChange,
-    langDraft,
-    language,
-    onLanguageChange,
-    translating,
-  ]);
+  }, [draft, value, onChange, langDraft, language, onLanguageChange, translating]);
 
   // Only commit when focus leaves the entire editing container,
   // not when moving between the language input and the code textarea.
   const handleContainerBlur = useCallback(
     (e: FocusEvent<HTMLDivElement>) => {
       // relatedTarget is the element receiving focus next
-      if (
-        containerRef.current &&
-        e.relatedTarget &&
-        containerRef.current.contains(e.relatedTarget as Node)
-      ) {
+      if (containerRef.current && e.relatedTarget && containerRef.current.contains(e.relatedTarget as Node)) {
         // Focus moved to another element inside the container — do nothing
         return;
       }
@@ -578,29 +523,19 @@ export function EditableCode({
 
   if (editing) {
     return (
-      <div
-        className="editable-code-editing"
-        ref={containerRef}
-        onBlur={handleContainerBlur}
-      >
+      <div className="editable-code-editing" ref={containerRef} onBlur={handleContainerBlur}>
         <div className="editable-block-toolbar">
           {onLanguageChange && (
             <input
               type="text"
               className="editable-input editable-lang-input"
               value={langDraft}
-              onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                setLangDraft(e.target.value)
-              }
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setLangDraft(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Language"
             />
           )}
-          <TranslateButton
-            onClick={doTranslate}
-            translating={translating}
-            disabled={!onTranslate}
-          />
+          <TranslateButton onClick={doTranslate} translating={translating} disabled={!onTranslate} />
         </div>
         <textarea
           ref={textareaRef}
@@ -640,11 +575,7 @@ export function EditableCode({
         />
       </pre>
       <span className="editable-pencil"> ✎</span>
-      <RestoreButton
-        visible={isModified && !!onRestore}
-        onClick={onRestore!}
-        originalValue={originalValue}
-      />
+      <RestoreButton visible={isModified && !!onRestore} onClick={onRestore!} originalValue={originalValue} />
     </div>
   );
 }
@@ -662,11 +593,7 @@ interface SeveritySelectProps {
 /**
  * Severity dropdown selector styled as the severity badge.
  */
-export function SeveritySelect({
-  value,
-  onChange,
-  getColor,
-}: SeveritySelectProps): React.ReactElement {
+export function SeveritySelect({ value, onChange, getColor }: SeveritySelectProps): React.ReactElement {
   const colors = getColor(value);
 
   return (

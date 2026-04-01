@@ -60,6 +60,14 @@ pnpm build
 
 Runs TypeScript type checking (`tsc --noEmit`) followed by `vite build`. Output goes to `dist/`.
 
+### Test
+
+```sh
+pnpm test
+```
+
+Runs unit tests with Vitest.
+
 ### Preview Production Build
 
 ```sh

@@ -1,4 +1,4 @@
-import type { Issue, ExtraRow, GroupedCategory, SeverityColor } from "./types";
+import type { GroupedCategory, Issue, SeverityColor } from "./types";
 
 /**
  * Parses an audit issue markdown file into a structured object.
@@ -31,6 +31,8 @@ import type { Issue, ExtraRow, GroupedCategory, SeverityColor } from "./types";
  */
 
 export function parseIssue(markdownContent: string): Omit<Issue, "_id"> {
+  const normalizedContent = normalizeMarkdown(markdownContent);
+
   const issue: Omit<Issue, "_id"> = {
     title: "",
     overallRisk: "",
@@ -50,34 +52,31 @@ export function parseIssue(markdownContent: string): Omit<Issue, "_id"> {
     extraRows: [],
   };
 
-  // Extract title from first heading
-  const titleMatch = markdownContent.match(/^#\s+Issue title:\s*(.+)$/m);
-  if (titleMatch) {
-    issue.title = titleMatch[1].trim();
-  }
+  // Extract title from heading (supports "Issue title:" and plain H1 variants)
+  issue.title = extractTitle(normalizedContent);
 
   // Extract metadata fields
   const metaPatterns: Record<string, RegExp> = {
-    overallRisk: /^Overall Risk:\s*(.+)$/m,
-    impact: /^Impact:\s*(.+)$/m,
-    exploitability: /^Exploitability:\s*(.+)$/m,
-    findingId: /^Finding ID:\s*(.+)$/m,
-    component: /^Component:\s*(.+)$/m,
-    category: /^Category:\s*(.+)$/m,
-    status: /^Status:\s*(.+)$/m,
+    overallRisk: /^\s*overall\s*risk\s*:\s*(.+)$/im,
+    impact: /^\s*impact\s*:\s*(.+)$/im,
+    exploitability: /^\s*exploitability\s*:\s*(.+)$/im,
+    findingId: /^\s*finding\s*id\s*:\s*(.+)$/im,
+    component: /^\s*component\s*:\s*(.+)$/im,
+    category: /^\s*category\s*:\s*(.+)$/im,
+    status: /^\s*status\s*:\s*(.+)$/im,
   };
 
   for (const [key, pattern] of Object.entries(metaPatterns)) {
-    const match = markdownContent.match(pattern);
+    const match = normalizedContent.match(pattern);
     if (match) {
       (issue as Record<string, unknown>)[key] = match[1].trim();
     }
   }
 
   // Extract additional issue rows (format: "Additional Issue: Title | Severity")
-  const extraRowPattern = /^Additional Issue:\s*(.+)$/gm;
+  const extraRowPattern = /^\s*additional\s*issue\s*:\s*(.+)$/gim;
   let extraMatch: RegExpExecArray | null;
-  while ((extraMatch = extraRowPattern.exec(markdownContent)) !== null) {
+  while ((extraMatch = extraRowPattern.exec(normalizedContent)) !== null) {
     const parts = extraMatch[1].split("|");
     const rowTitle = (parts[0] || "").trim();
     const rowSeverity = (parts[1] || "Medium").trim();
@@ -85,7 +84,7 @@ export function parseIssue(markdownContent: string): Omit<Issue, "_id"> {
   }
 
   // Split content into sections based on ## and ### headings
-  const sections = splitSections(markdownContent);
+  const sections = splitSections(normalizedContent);
 
   // Extract Impact details
   if (sections["impact details"]) {
@@ -101,7 +100,7 @@ export function parseIssue(markdownContent: string): Omit<Issue, "_id"> {
     issue.description = mainDesc.trim();
 
     // Extract evidence links
-    const evidenceMatch = descContent.match(/Evidence:\s*(.+)$/m);
+    const evidenceMatch = descContent.match(/^\s*evidence\s*:\s*(.+)$/im);
     if (evidenceMatch) {
       issue.evidence = evidenceMatch[1].trim();
     }
@@ -145,9 +144,14 @@ function splitSections(content: string): Record<string, string> {
 
   let currentKey: string | null = null;
   let currentLines: string[] = [];
+  let inCodeFence = false;
 
   for (const line of lines) {
-    const headingMatch = line.match(/^#{2,3}\s+(.+)$/);
+    if (line.trim().startsWith("```")) {
+      inCodeFence = !inCodeFence;
+    }
+
+    const headingMatch = !inCodeFence ? line.match(/^#{2,3}\s+(.+)$/) : null;
     if (headingMatch) {
       // Save previous section
       if (currentKey !== null) {
@@ -189,10 +193,29 @@ function extractMainContent(content: string): string {
 /**
  * Parse multiple markdown files and return an array of parsed issues.
  */
-export function parseMultipleIssues(
-  filesContent: string[],
-): Array<Omit<Issue, "_id">> {
+export function parseMultipleIssues(filesContent: string[]): Array<Omit<Issue, "_id">> {
   return filesContent.map((content) => parseIssue(content));
+}
+
+function normalizeMarkdown(content: string): string {
+  return content
+    .replace(/^\uFEFF/, "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n");
+}
+
+function extractTitle(content: string): string {
+  const issueTitleMatch = content.match(/^\s*#\s+issue\s*title\s*:\s*(.+)$/im);
+  if (issueTitleMatch) {
+    return issueTitleMatch[1].trim();
+  }
+
+  const genericH1Match = content.match(/^\s*#\s+(.+)$/m);
+  if (genericH1Match) {
+    return genericH1Match[1].trim();
+  }
+
+  return "";
 }
 
 /**
@@ -233,11 +256,7 @@ export function groupByCategory(issues: Issue[]): GroupedCategory[] {
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([category, items]) => ({
       category,
-      issues: items
-        .slice()
-        .sort(
-          (a, b) => severityRank(a.overallRisk) - severityRank(b.overallRisk),
-        ),
+      issues: items.slice().sort((a, b) => severityRank(a.overallRisk) - severityRank(b.overallRisk)),
     }));
 }
 
@@ -272,10 +291,7 @@ export function inlineMarkdownToHtml(text: string): string {
   let html = text;
 
   // Escape HTML entities
-  html = html
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  html = html.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
   // Inline code
   html = html.replace(/`([^`]+)`/g, "<code>$1</code>");

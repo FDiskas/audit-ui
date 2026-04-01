@@ -43,9 +43,7 @@ interface TocLinkRect {
  * Waits for the browser to fully layout and paint.
  */
 function waitForPaint(): Promise<void> {
-  return new Promise((resolve) =>
-    requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-  );
+  return new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
 }
 
 /**
@@ -66,12 +64,9 @@ function createRenderSurface(): RenderSurface {
   ].join(";");
 
   const container = document.createElement("div");
-  container.style.cssText = [
-    `width: ${RENDER_WIDTH_PX}px`,
-    "margin: 0 auto",
-    "padding: 0",
-    "background: #ffffff",
-  ].join(";");
+  container.style.cssText = [`width: ${RENDER_WIDTH_PX}px`, "margin: 0 auto", "padding: 0", "background: #ffffff"].join(
+    ";",
+  );
 
   wrapper.appendChild(container);
   document.body.appendChild(wrapper);
@@ -129,55 +124,46 @@ function stylePage(pageEl: HTMLElement): void {
   });
 
   // Remove modified-state visual indicators
-  pageEl
-    .querySelectorAll<HTMLElement>(".editable-display--modified")
-    .forEach((el) => {
-      el.style.borderLeft = "none";
-      el.style.paddingLeft = "";
-      el.style.marginLeft = "";
-      el.classList.remove("editable-display--modified");
-    });
-  pageEl
-    .querySelectorAll<HTMLElement>(".editable-block-display--modified")
-    .forEach((el) => {
-      el.style.borderLeft = "none";
-      el.style.paddingLeft = "";
-      el.style.marginLeft = "";
-      el.classList.remove("editable-block-display--modified");
-    });
+  pageEl.querySelectorAll<HTMLElement>(".editable-display--modified").forEach((el) => {
+    el.style.borderLeft = "none";
+    el.style.paddingLeft = "";
+    el.style.marginLeft = "";
+    el.classList.remove("editable-display--modified");
+  });
+  pageEl.querySelectorAll<HTMLElement>(".editable-block-display--modified").forEach((el) => {
+    el.style.borderLeft = "none";
+    el.style.paddingLeft = "";
+    el.style.marginLeft = "";
+    el.classList.remove("editable-block-display--modified");
+  });
   if (pageEl.classList.contains("issue-page--modified")) {
     pageEl.style.borderLeft = "none";
     pageEl.classList.remove("issue-page--modified");
   }
 
   // Remove hover-edit styling from editable wrappers
-  pageEl
-    .querySelectorAll<HTMLElement>(".editable-display, .editable-block-display")
-    .forEach((el) => {
-      el.style.cursor = "default";
-      el.style.outline = "none";
-      el.style.background = "transparent";
-    });
+  pageEl.querySelectorAll<HTMLElement>(".editable-display, .editable-block-display").forEach((el) => {
+    el.style.cursor = "default";
+    el.style.outline = "none";
+    el.style.background = "transparent";
+  });
 
   // Replace <select> severity dropdowns with plain badge spans
-  pageEl
-    .querySelectorAll<HTMLSelectElement>(".severity-select")
-    .forEach((sel) => {
-      const badge = document.createElement("span");
-      badge.className = "severity-badge";
-      badge.textContent =
-        sel.value || sel.options[sel.selectedIndex]?.text || "";
-      badge.style.backgroundColor = sel.style.backgroundColor;
-      badge.style.color = sel.style.color;
-      badge.style.display = "inline-block";
-      badge.style.padding = "3px 14px";
-      badge.style.borderRadius = "4px";
-      badge.style.fontWeight = "600";
-      badge.style.fontSize = "0.85rem";
-      badge.style.textAlign = "center";
-      badge.style.whiteSpace = "nowrap";
-      sel.parentNode?.replaceChild(badge, sel);
-    });
+  pageEl.querySelectorAll<HTMLSelectElement>(".severity-select").forEach((sel) => {
+    const badge = document.createElement("span");
+    badge.className = "severity-badge";
+    badge.textContent = sel.value || sel.options[sel.selectedIndex]?.text || "";
+    badge.style.backgroundColor = sel.style.backgroundColor;
+    badge.style.color = sel.style.color;
+    badge.style.display = "inline-block";
+    badge.style.padding = "3px 14px";
+    badge.style.borderRadius = "4px";
+    badge.style.fontWeight = "600";
+    badge.style.fontSize = "0.85rem";
+    badge.style.textAlign = "center";
+    badge.style.whiteSpace = "nowrap";
+    sel.parentNode?.replaceChild(badge, sel);
+  });
 
   // Hide any edit hints that might be visible
   pageEl.querySelectorAll<HTMLElement>(".editable-hint").forEach((el) => {
@@ -188,9 +174,7 @@ function stylePage(pageEl: HTMLElement): void {
 /**
  * Renders an element to a canvas using html2canvas.
  */
-async function renderToCanvas(
-  element: HTMLElement,
-): Promise<HTMLCanvasElement> {
+async function renderToCanvas(element: HTMLElement): Promise<HTMLCanvasElement> {
   return html2canvas(element, {
     scale: SCALE,
     useCORS: true,
@@ -209,11 +193,7 @@ async function renderToCanvas(
  *
  * Returns the number of PDF pages consumed.
  */
-function addCanvasToPdf(
-  pdf: jsPDF,
-  canvas: HTMLCanvasElement,
-  isFirstPage: boolean,
-): number {
+function addCanvasToPdf(pdf: jsPDF, canvas: HTMLCanvasElement, isFirstPage: boolean): number {
   const canvasWidth = canvas.width;
   const canvasHeight = canvas.height;
 
@@ -230,14 +210,7 @@ function addCanvasToPdf(
       pdf.addPage();
     }
     const imgData = canvas.toDataURL("image/jpeg", 0.95);
-    pdf.addImage(
-      imgData,
-      "JPEG",
-      MARGIN_LEFT,
-      MARGIN_TOP,
-      imgWidthMm,
-      totalImgHeightMm,
-    );
+    pdf.addImage(imgData, "JPEG", MARGIN_LEFT, MARGIN_TOP, imgWidthMm, totalImgHeightMm);
     return 1;
   } else {
     // Content is taller than one page — slice the canvas into strips
@@ -274,14 +247,7 @@ function addCanvasToPdf(
       }
 
       const stripData = stripCanvas.toDataURL("image/jpeg", 0.95);
-      pdf.addImage(
-        stripData,
-        "JPEG",
-        MARGIN_LEFT,
-        MARGIN_TOP,
-        imgWidthMm,
-        thisStripMm,
-      );
+      pdf.addImage(stripData, "JPEG", MARGIN_LEFT, MARGIN_TOP, imgWidthMm, thisStripMm);
 
       srcY += thisStripPx;
       pageIndex++;
@@ -296,10 +262,7 @@ function addCanvasToPdf(
  * container element. Returns an array of { issueId, x, y, w, h } where
  * x/y/w/h are in DOM pixels relative to the container's top-left.
  */
-function measureTocLinks(
-  cloneEl: HTMLElement,
-  containerEl: HTMLElement,
-): TocLinkRect[] {
+function measureTocLinks(cloneEl: HTMLElement, containerEl: HTMLElement): TocLinkRect[] {
   const tocItems = cloneEl.querySelectorAll<HTMLElement>(".toc-item");
   const containerRect = containerEl.getBoundingClientRect();
   const results: TocLinkRect[] = [];
@@ -379,10 +342,7 @@ function addTocLinkAnnotations(
  * After rendering, clickable link annotations are added to the TOC page
  * that jump to the corresponding issue pages.
  */
-export async function generatePdf(
-  _issues: Issue[],
-  previewElement: HTMLElement,
-): Promise<void> {
+export async function generatePdf(_issues: Issue[], previewElement: HTMLElement): Promise<void> {
   if (!previewElement) {
     throw new Error("Preview element not found");
   }
@@ -398,8 +358,7 @@ export async function generatePdf(
   const { container, cleanup } = createRenderSurface();
 
   try {
-    const issuePages =
-      previewElement.querySelectorAll<HTMLElement>(".issue-page");
+    const issuePages = previewElement.querySelectorAll<HTMLElement>(".issue-page");
 
     // Track PDF page starts for each DOM element (1-based page numbers)
     let currentPdfPage = 1;
@@ -470,13 +429,7 @@ export async function generatePdf(
 
     // Add clickable link annotations on the TOC page(s)
     if (tocLinks.length > 0 && tocPagesUsed > 0) {
-      addTocLinkAnnotations(
-        pdf,
-        tocStartPage,
-        tocPagesUsed,
-        tocLinks,
-        issueIdToPage,
-      );
+      addTocLinkAnnotations(pdf, tocStartPage, tocPagesUsed, tocLinks, issueIdToPage);
     }
 
     pdf.save("audit-report.pdf");

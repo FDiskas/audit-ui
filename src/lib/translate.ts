@@ -9,9 +9,7 @@ export const translationAvailable = Boolean(apiKey);
 const getClient = () => {
   if (!apiKey) {
     // Should never be called when translationAvailable is false, but guard anyway.
-    throw new Error(
-      "VITE_OPENAI_API_KEY environment variable is not set. Add it to your .env file.",
-    );
+    throw new Error("VITE_OPENAI_API_KEY environment variable is not set. Add it to your .env file.");
   }
   return new OpenAI({
     apiKey,
@@ -19,10 +17,7 @@ const getClient = () => {
   });
 };
 
-export const translateText = async (
-  text: string,
-  targetLanguage: string,
-): Promise<string> => {
+export const translateText = async (text: string, targetLanguage: string): Promise<string> => {
   // If the API key is not provided we simply return the original text and
   // avoid invoking the OpenAI client. The UI should be disabled/hide controls
   // when `translationAvailable` is false, but this makes the helper safe to

@@ -192,8 +192,7 @@ body {
 .file-name {
   font-size: 0.88rem;
   color: #444;
-  font-family:
-    "SFMono-Regular", "Consolas", "Liberation Mono", "Courier New", monospace;
+  font-family: "SFMono-Regular", "Consolas", "Liberation Mono", "Courier New", monospace;
   word-break: break-all;
 }
 
@@ -728,13 +727,13 @@ body {
   margin-bottom: 0.2rem;
 }
 
-.issue-section code, .issue-table code {
+.issue-section code,
+.issue-table code {
   background: #f0f0f0;
   padding: 1px 5px;
   border-radius: 3px;
   font-size: 0.85rem;
-  font-family:
-    "SFMono-Regular", "Consolas", "Liberation Mono", "Courier New", monospace;
+  font-family: "SFMono-Regular", "Consolas", "Liberation Mono", "Courier New", monospace;
   color: #c0392b;
 }
 
@@ -778,8 +777,7 @@ body {
 
 .code-block code,
 .code-block code.hljs {
-  font-family:
-    "SFMono-Regular", "Consolas", "Liberation Mono", "Courier New", monospace;
+  font-family: "SFMono-Regular", "Consolas", "Liberation Mono", "Courier New", monospace;
   font-size: 0.82rem;
   line-height: 1.55;
   background: transparent;
@@ -956,8 +954,7 @@ body {
 }
 
 .template-code code {
-  font-family:
-    "SFMono-Regular", "Consolas", "Liberation Mono", "Courier New", monospace;
+  font-family: "SFMono-Regular", "Consolas", "Liberation Mono", "Courier New", monospace;
   font-size: 0.82rem;
   line-height: 1.6;
   color: #333;
@@ -1055,8 +1052,7 @@ body {
 }
 
 .editable-textarea {
-  font-family:
-    "SFMono-Regular", "Consolas", "Liberation Mono", "Courier New", monospace;
+  font-family: "SFMono-Regular", "Consolas", "Liberation Mono", "Courier New", monospace;
   font-size: 0.85rem;
   line-height: 1.6;
   color: #333;
@@ -1077,8 +1073,7 @@ body {
 }
 
 .editable-code-textarea {
-  font-family:
-    "SFMono-Regular", "Consolas", "Liberation Mono", "Courier New", monospace;
+  font-family: "SFMono-Regular", "Consolas", "Liberation Mono", "Courier New", monospace;
   font-size: 0.82rem;
   line-height: 1.55;
   background: #f8f8f0;

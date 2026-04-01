@@ -1,0 +1,11 @@
+{
+  "biome.enabled": true,
+  "biome.configurationPath": "biome.json",
+  "biome.runFromTemporaryLocation": false,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.biome": "explicit",
+    "source.organizeImports.biome": "explicit"
+  },
+  "biome.requireConfiguration": true,
+  "locust.autoSetup": "never"
+}
